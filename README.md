@@ -12,6 +12,7 @@
 │   └── utils.go             
 ├── models                   # 模型  
 │   └── common.go     
+│   └── db_init.go           # 数据库
 │   └── ...   
 ├── router                   # 路由    
 │   └── app.go   
