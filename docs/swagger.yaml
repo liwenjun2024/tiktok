@@ -20,4 +20,23 @@ paths:
       summary: 用户登录
       tags:
       - 公共方法
+  /douyin/user/register/:
+    post:
+      parameters:
+      - description: username
+        in: query
+        name: username
+        type: string
+      - description: password
+        in: query
+        name: password
+        type: string
+      responses:
+        "200":
+          description: '{"StatusCode","","StatusMsg":""}'
+          schema:
+            type: string
+      summary: 用户注册
+      tags:
+      - 公共方法
 swagger: "2.0"

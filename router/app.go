@@ -15,7 +15,8 @@ func InitRouter() *gin.Engine {
 	r.Static("/static", "./public")
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	apiRouter := r.Group("/douyin")
-	apiRouter.POST("/user/login/", controller.Login)
+	appRouter := r.Group("/douyin")
+	appRouter.POST("/user/login/", controller.Login)
+	appRouter.POST("/user/register/", controller.Register)
 	return r
 }
