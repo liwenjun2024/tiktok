@@ -16,6 +16,30 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/douyin/user/": {
+            "get": {
+                "tags": [
+                    "公共方法"
+                ],
+                "summary": "当前用户信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "token",
+                        "name": "token",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"Response\":{},\"User\",{}}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/douyin/user/login/": {
             "post": {
                 "tags": [

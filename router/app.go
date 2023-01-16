@@ -16,7 +16,14 @@ func InitRouter() *gin.Engine {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	appRouter := r.Group("/douyin")
+	//用户
 	appRouter.POST("/user/login/", controller.Login)
 	appRouter.POST("/user/register/", controller.Register)
+	appRouter.GET("/user/", controller.UserInfo)
+
+	//作品
+	appRouter.GET("/publish/list/", controller.PublishList)   //公开作品
+	appRouter.GET("/favorite/list/", controller.FavoriteList) //个人喜欢作品
+	appRouter.GET("/feed/", controller.Feed)                  //视频流
 	return r
 }

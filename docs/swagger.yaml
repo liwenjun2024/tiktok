@@ -1,6 +1,21 @@
 info:
   contact: {}
 paths:
+  /douyin/user/:
+    get:
+      parameters:
+      - description: token
+        in: query
+        name: token
+        type: string
+      responses:
+        "200":
+          description: '{"Response":{},"User",{}}'
+          schema:
+            type: string
+      summary: 当前用户信息
+      tags:
+      - 公共方法
   /douyin/user/login/:
     post:
       parameters:

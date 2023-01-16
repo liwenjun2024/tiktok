@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/go-redis/redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -10,6 +11,8 @@ import (
 )
 
 var DB = Init()
+
+var RDB = RedisInit()
 
 // Init 数据库连接
 func Init() *gorm.DB {
@@ -29,4 +32,11 @@ func Init() *gorm.DB {
 	return db
 }
 
-//下面可以放其他的比如 Redis
+// 下面可以放其他的比如 Redis
+func RedisInit() *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       0,
+	})
+}

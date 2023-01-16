@@ -1,11 +1,15 @@
 package controller
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"log"
 	"net/http"
+	"tiktok/helper"
 	"tiktok/models"
+	"time"
 )
 
 // Login
@@ -18,14 +22,20 @@ import (
 func Login(c *gin.Context) {
 	username := c.Query("username")
 	password := c.Query("password")
-	//中间进行业务操作
-	//start
-	//...
-	//end
-	data := new(models.User)
-	//会用到token
-	token := "user"
-	err := models.DB.Where("username =? and password =?", username, password).First(&data).Error
+	//进行业务操作
+	data := &models.User{}
+	var nowDate = time.Now().Format("2006-01-02 15")
+	var secret = fmt.Sprintf("%v%v", nowDate, "xxxx")
+	user := make(map[string]interface{})
+	user["name"] = username
+	user["password"] = password
+	token, err := helper.GenerateToken(user, secret)
+	if err != nil {
+		log.Println("token create Error: ", err)
+		return
+	}
+	//查询是否存在此用户
+	err = models.DB.Where("username =? and password =?", username, password).First(data).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusOK, models.UserLoginResponse{
@@ -33,6 +43,19 @@ func Login(c *gin.Context) {
 			})
 		}
 	} else {
+		//将当前登录用户存进redis
+		userData, err := json.Marshal(data)
+		if err != nil {
+			log.Println("json.Marshal Error: ", err)
+			return
+		}
+
+		err = models.RDB.Set(c, token, string(userData), 100*time.Second).Err()
+		if err != nil {
+			log.Println("redis set Error:", err)
+			return
+		}
+
 		c.JSON(http.StatusOK, models.UserLoginResponse{
 			Response: models.Response{StatusCode: 0},
 			UserId:   data.UserId,
@@ -58,7 +81,7 @@ func Register(c *gin.Context) {
 			StatusMsg:  "用户密码长度必须大于5位",
 		})
 	}
-	var count int64 = 0
+	var count int64
 	err := models.DB.Table("tb_user").Where("username = ?", username).Count(&count).Error
 	if err != nil {
 		log.Println("Register select is Error: ", err)
@@ -72,7 +95,7 @@ func Register(c *gin.Context) {
 	} else {
 		user := &models.User{
 
-			UserName: username,
+			Name:     username,
 			Password: password,
 		}
 		err := models.DB.Create(user).Error
@@ -85,5 +108,27 @@ func Register(c *gin.Context) {
 			StatusMsg:  "用户注册成功",
 		})
 	}
+}
+
+// UserInfo
+// @Tags 公共方法
+// @Summary 当前用户信息
+// @Param token query string false "token"
+// @Success 200 {string} json "{"Response":{},"User",{}}"
+// @Router /douyin/user/ [get]
+func UserInfo(c *gin.Context) {
+	token := c.Query("token")
+	//在redis中查询token
+	objStr := models.RDB.Get(c, token).Val()
+	b := []byte(objStr)
+	user := models.User{}
+	err := json.Unmarshal(b, &user)
+	if err != nil {
+		log.Println("UserInfo Unmarshal Error:", err)
+	}
+	c.JSON(http.StatusOK, models.UserResponse{
+		Response: models.Response{StatusCode: 0},
+		User:     user,
+	})
 
 }
