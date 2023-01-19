@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"net/http"
+	"tiktok/define"
 	"tiktok/helper"
 	"tiktok/models"
 	"time"
@@ -23,8 +24,8 @@ func Login(c *gin.Context) {
 	username := c.Query("username")
 	password := c.Query("password")
 	//进行业务操作
-	data := &models.User{}
-	var nowDate = time.Now().Format("2006-01-02 15")
+	data := models.User{}
+	var nowDate = time.Now().Format(define.DataTime)
 	var secret = fmt.Sprintf("%v%v", nowDate, "xxxx")
 	user := make(map[string]interface{})
 	user["name"] = username
@@ -35,7 +36,7 @@ func Login(c *gin.Context) {
 		return
 	}
 	//查询是否存在此用户
-	err = models.DB.Where("username =? and password =?", username, password).First(data).Error
+	err = models.DB.Where("username =? and password =?", username, password).First(&data).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusOK, models.UserLoginResponse{
@@ -49,8 +50,8 @@ func Login(c *gin.Context) {
 			log.Println("json.Marshal Error: ", err)
 			return
 		}
-
-		err = models.RDB.Set(c, token, string(userData), 100*time.Second).Err()
+		// redis userInfo 过期时间
+		err = models.RedisUserInfo.Set(c, token, string(userData), 6*time.Hour).Err()
 		if err != nil {
 			log.Println("redis set Error:", err)
 			return
@@ -94,7 +95,6 @@ func Register(c *gin.Context) {
 		})
 	} else {
 		user := &models.User{
-
 			Name:     username,
 			Password: password,
 		}
@@ -119,12 +119,20 @@ func Register(c *gin.Context) {
 func UserInfo(c *gin.Context) {
 	token := c.Query("token")
 	//在redis中查询token
-	objStr := models.RDB.Get(c, token).Val()
+	objStr := models.RedisUserInfo.Get(c, token).Val()
+	if objStr == "" {
+		c.JSON(http.StatusOK, models.Response{
+			StatusCode: 1,
+			StatusMsg:  "当前用户不合法",
+		})
+		return
+	}
 	b := []byte(objStr)
 	user := models.User{}
 	err := json.Unmarshal(b, &user)
 	if err != nil {
 		log.Println("UserInfo Unmarshal Error:", err)
+		return
 	}
 	c.JSON(http.StatusOK, models.UserResponse{
 		Response: models.Response{StatusCode: 0},
