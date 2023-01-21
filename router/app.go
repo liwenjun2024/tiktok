@@ -27,5 +27,8 @@ func InitRouter() *gin.Engine {
 	appRouter.GET("/favorite/list/", controller.FavoriteList) //个人喜欢作品
 	appRouter.GET("/feed/", controller.Feed)                  //视频流
 
+	//评论
+	appRouter.POST("/comment/action/", controller.CommentAction)
+	appRouter.GET("/comment/list/", controller.CommentList)
 	return r
 }

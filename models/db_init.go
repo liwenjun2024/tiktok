@@ -15,8 +15,9 @@ import (
 var DB *gorm.DB
 
 var (
-	RedisUserInfo *redis.Client //用户信息redis  存储库0
-	RedisFeedInfo *redis.Client //视频信息redis  存储库1
+	RedisUserInfo     *redis.Client //用户信息redis  存储库0
+	RedisFeedInfo     *redis.Client //视频信息redis  存储库1
+	RedisCommentsInfo *redis.Client //评论信息redis  存储库2
 )
 
 var MyFTP *goftp.FTP
@@ -51,6 +52,11 @@ func RedisInit() {
 		Addr:     "localhost:6379",
 		Password: "",
 		DB:       1,
+	})
+	RedisCommentsInfo = redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       2,
 	})
 }
 
