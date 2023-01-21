@@ -63,13 +63,13 @@ func FTPInit() {
 		return
 	}
 
-	err = MyFTP.Login("anonymous", "") //登录操作
+	err = MyFTP.Login(define.FTPUserName, define.FTPPassword) //登录操作
 	if err != nil {
 		log.Println("ftp Login Error: ", err)
 		return
 	}
 	go func() {
-		time.Sleep(time.Duration(60) * time.Second)
+		time.Sleep(time.Duration(120) * time.Second)
 		MyFTP.Noop()
 	}()
 }
