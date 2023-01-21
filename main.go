@@ -8,7 +8,7 @@ import (
 func main() {
 	r := router.InitRouter()
 	initDB()
-	r.Run()
+	r.Run(":8080")
 }
 
 // 初始化服务
