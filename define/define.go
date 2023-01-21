@@ -9,6 +9,6 @@ var (
 	FTPAddress      = Address + ":21"                 // ftp 地址
 	PlayUrlAddress  = "http://" + Address + "/video/" // ftp视频路径
 	CoverUrlAddress = "http://" + Address + "/image/" // ftp图片路径
-	SSHUserName     = "catsofa"
-	SSHPassword     = "aFlamingo595.."
+	//SSHUserName     = "catsofa"
+	//SSHPassword     = "aFlamingo595.."
 )
