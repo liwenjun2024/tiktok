@@ -12,14 +12,12 @@ import (
 	"time"
 )
 
-var DB *gorm.DB
-
 var (
+	DB            *gorm.DB
 	RedisUserInfo *redis.Client //用户信息redis  存储库0
 	RedisFeedInfo *redis.Client //视频信息redis  存储库1
+	MyFTP         *goftp.FTP
 )
-
-var MyFTP *goftp.FTP
 
 // DBInit 数据库连接
 func DBInit() {
@@ -32,7 +30,7 @@ func DBInit() {
 			Colorful:      true,
 		},
 	)
-	dsn := "root:123456@tcp(localhost:3306)/tiktok?charset=utf8mb4&parseTime=true"
+	dsn := "root:1121@tcp(localhost:3307)/tiktok?charset=utf8mb4&parseTime=true"
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: newLogger})
 	if err != nil {
 		log.Println("gorm Init Error: ", err)
@@ -43,14 +41,14 @@ func DBInit() {
 // RedisInit  Redis
 func RedisInit() {
 	RedisUserInfo = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
+		Addr:     "192.168.3.4:6379",
+		Password: "123321",
 		DB:       0,
 	})
 	RedisFeedInfo = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
-		DB:       1,
+		Addr:     "192.168.3.4:6379",
+		Password: "123321",
+		DB:       0,
 	})
 }
 

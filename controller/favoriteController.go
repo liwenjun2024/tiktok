@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -9,38 +8,43 @@ import (
 	"tiktok/models"
 )
 
-// FavoriteList all users have same favorite video list
+// FavoriteList 用户喜欢列表功能实现
 func FavoriteList(c *gin.Context) {
 	// 1. 参数获取
 	token := c.Query("token")
-	// 2. 校验token
-	err := models.RedisUserInfo.Get(c, token).Err()
+	//在redis中查询token
+	user := models.GetUserByToken(c, token)
+	// 2. 获取用户点赞的全部视频信息
+	// 2.1 根据用户id 获取点赞的视频id集合    ---> 优化1：利用redis的set结构存储用户点赞视频id
+	favoriteList, err := models.FindFavoriteByUserID(user.UserId)
 	if err != nil {
-		c.JSON(http.StatusOK, models.Response{
-			StatusCode: 1,
-			StatusMsg:  "当前用户未登录, 请先登录",
-		})
-		return
-	}
-	// 3. 根据token获取用户信息
-	objStr := models.RedisUserInfo.Get(c, token).Val()
-	b := []byte(objStr)
-	user := models.User{}
-	err = json.Unmarshal(b, &user)
-	if err != nil {
-		log.Println("UserInfo Unmarshal Error:", err)
-		return
-	}
+		log.Printf("查询出错,err：%#v\n", err)
 
-	c.JSON(http.StatusOK, models.VideoListResponse{
-		Response: models.Response{
-			StatusCode: 0,
-			StatusMsg:  "查询成功",
-		},
-		VideoList: DemoVideos,
-	})
+	}
+	ret := new(models.VideoListResponse)
+	ret.StatusCode = 0
+	ret.StatusMsg = "查询成功"
+	ret.VideoList = make([]models.AccordVideo, 0, len(favoriteList))
+	for _, favoite := range favoriteList {
+		temp, _ := models.GetVideoListWithVideoId(favoite.VideoId)
+		res := models.AccordVideo{}
+		res.Id = temp.Id
+		res.Author, _ = models.GetUserWithId(temp.AuthorId)
+		res.PlayUrl = "https://www.w3schools.com/html/movie.mp4"
+		res.CoverUrl = "https://cdn.pixabay.com/photo/2016/03/27/18/10/bear-1283347_1280.jpg"
+		// res.PlayUrl = "address" + strconv.FormatInt(temp.Id, 10) + ".mp4"
+		// res.CoverUrl = "address" + strconv.FormatInt(temp.Id, 10) + ".png"
+		res.FavoriteCount = temp.FavoriteCount
+		res.CommentCount = temp.CommentCount
+		//待修改
+		res.IsFavorite = true
+		res.Title = temp.Title
+		ret.VideoList = append(ret.VideoList, res)
+	}
+	c.JSON(http.StatusOK, ret)
 }
 
+// Favorite 用户的点赞和取消功能实现
 func Favorite(c *gin.Context) {
 	// 1. 参数获取
 	token := c.Query("token")
@@ -49,57 +53,43 @@ func Favorite(c *gin.Context) {
 	// 值为1：点赞，值为2取消点赞.
 	actionType := c.Query("action_type")
 	//在redis中查询token
-	objStr := models.RedisUserInfo.Get(c, token).Val()
-	if objStr == "" {
-		c.JSON(http.StatusOK, models.Response{
-			StatusCode: 1,
-			StatusMsg:  "当前用户尚未登录，请先登录",
-		})
-		return
-	}
-	b := []byte(objStr)
-	user := models.User{}
-	err := json.Unmarshal(b, &user)
-	if err != nil {
-		log.Println("UserInfo Unmarshal Error:", err)
-		return
-	}
+	user := models.GetUserByToken(c, token)
+	favorite := models.Favorite{UserId: user.UserId, VideoId: vId}
 	// 2 逻辑处理
 	// 2.1 取消点赞
+	var err error
 	if actionType == "2" {
 		// 将status字段修改为0
-		models.DB.Table("tb_likes").
-			Where("video_id = ? AND user_id = ?", vId, user.UserId).
-			Update("status", "0")
+		err = models.UpdateStatus(favorite, actionType)
+		if err != nil {
+			c.JSON(http.StatusOK, models.Response{
+				StatusCode: 1,
+				StatusMsg:  err.Error(),
+			})
+			return
+		}
 		c.JSON(http.StatusOK, models.Response{
 			StatusCode: 0,
 			StatusMsg:  "取消点赞",
 		})
 		return
-	}
-	// 2.2 点赞
-	if actionType == "1" {
+	} else if actionType == "1" {
+		// 2.2 点赞
 		// 2.2.1 判断是否该用户之前已经对该视频点过赞。
-		var count int64
-		// 此处应该建立联合索引
-		models.DB.Table("tb_likes").
-			Where("video_id = ? AND user_id = ?", vId, user.UserId).
-			Count(&count)
-		if count == 1 {
+		exist := models.IsFavorite(favorite)
+		if exist {
 			// 说明数据已经存在，直接进行修改
-			models.DB.Table("tb_likes").
-				Where("video_id = ? AND user_id = ?", vId, user.UserId).
-				Update("status", "1")
+			models.UpdateStatus(favorite, actionType)
 		} else {
 			// 说明数据还未存在，进行创建
-			favorite := &models.Favorite{
-				VideoId: vId,
-				UserId:  user.UserId,
-				Status:  1,
-			}
-			err = models.DB.Table("tb_likes").Create(favorite).Error
+			err = models.InsertFavorite(favorite)
 			if err != nil {
 				log.Println("creating favorite data is Error: ", err)
+				c.JSON(http.StatusOK, models.Response{
+					StatusCode: 0,
+					StatusMsg:  err.Error(),
+				})
+				return
 			}
 		}
 		c.JSON(http.StatusOK, models.Response{
