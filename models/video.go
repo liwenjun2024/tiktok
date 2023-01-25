@@ -1,5 +1,9 @@
 package models
 
+import (
+	"errors"
+)
+
 // Video 添加视频操作结构体
 type Video struct {
 	Id            int64  `gorm:"column:id;"json:"id,omitempty"`
@@ -26,6 +30,7 @@ type AccordVideo struct {
 	CreateTime    string `gorm:"column:create_time;"json:"create_time"`
 }
 
+// VideoListResponse 喜欢列表结构体
 type VideoListResponse struct {
 	Response
 	VideoList []AccordVideo `json:"video_list"`
@@ -39,4 +44,14 @@ type VideoFeedResponse struct {
 
 func (video *Video) TableName() string {
 	return "tb_video"
+}
+
+// GetVideoListWithVideoId  根据视频id获取信息
+func GetVideoListWithVideoId(id int64) (Video, error) {
+	var res Video
+	err := DB.Table("tb_video").Where("id = ?", id).Find(&res)
+	if err.Error != nil {
+		return Video{}, errors.New("MySQL ERR")
+	}
+	return res, nil
 }

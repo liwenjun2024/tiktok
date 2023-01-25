@@ -12,15 +12,13 @@ import (
 	"time"
 )
 
-var DB *gorm.DB
-
 var (
-	RedisUserInfo     *redis.Client //用户信息redis  存储库0
-	RedisFeedInfo     *redis.Client //视频信息redis  存储库1
+	DB            *gorm.DB
+	RedisUserInfo *redis.Client //用户信息redis  存储库0
+	RedisFeedInfo *redis.Client //视频信息redis  存储库1
+	MyFTP         *goftp.FTP
 	RedisCommentsInfo *redis.Client //评论信息redis  存储库2
 )
-
-var MyFTP *goftp.FTP
 
 // DBInit 数据库连接
 func DBInit() {
@@ -69,13 +67,13 @@ func FTPInit() {
 		return
 	}
 
-	err = MyFTP.Login("anonymous", "") //登录操作
+	err = MyFTP.Login(define.FTPUserName, define.FTPPassword) //登录操作
 	if err != nil {
 		log.Println("ftp Login Error: ", err)
 		return
 	}
 	go func() {
-		time.Sleep(time.Duration(60) * time.Second)
+		time.Sleep(time.Duration(120) * time.Second)
 		MyFTP.Noop()
 	}()
 }

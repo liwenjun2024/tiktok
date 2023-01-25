@@ -30,5 +30,8 @@ func InitRouter() *gin.Engine {
 	//评论
 	appRouter.POST("/comment/action/", controller.CommentAction)
 	appRouter.GET("/comment/list/", controller.CommentList)
+
+	appRouter.POST("/favorite/action/", controller.Favorite)
+
 	return r
 }
