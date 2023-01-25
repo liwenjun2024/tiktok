@@ -66,6 +66,9 @@ func CommentAction(c *gin.Context) {
 			},
 			Comment: comment,
 		})
+		if models.RedisCommentsInfo.Get(c, string(videoId)).Val() != "" {
+			models.RedisCommentsInfo.Del(c, string(videoId))
+		}
 
 	case "2":
 		// 删除评论
@@ -94,6 +97,9 @@ func CommentAction(c *gin.Context) {
 			StatusCode: 0,
 			StatusMsg:  "删除成功",
 		})
+		if models.RedisCommentsInfo.Get(c, string(videoId)).Val() != "" {
+			models.RedisCommentsInfo.Del(c, string(videoId))
+		}
 	default:
 		c.JSON(http.StatusOK, models.Response{
 			StatusCode: 1,
